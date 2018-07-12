@@ -33,18 +33,5 @@ public interface CustomerClient {
     @Consumes({ "application/x-www-form-urlencoded" })
     @Produces("application/json")
     @Path("/validateid")
-    public LoginResponse validateCustomer(@FormParam("login") String login, @FormParam("password") String password);
-    
-    @POST
-    @Consumes({ "application/x-www-form-urlencoded" })
-    @Produces("application/json")
-    @Path("/validateid")
-    public LoginResponse validateCustomer(@FormParam("login") String login, 
-        @FormParam("password") String password,
-        @HeaderParam("acmeair-id") String headerId,
-        @HeaderParam("acmeair-date") String headerDate, 
-        @HeaderParam("acmeair-sig-body") String headerSigBody,
-        @HeaderParam("acmeair-signature") String headerSig);
-
-   
+    public LoginResponse validateCustomer(@HeaderParam("Authorization") String token, @FormParam("login") String login, @FormParam("password") String password);   
 }

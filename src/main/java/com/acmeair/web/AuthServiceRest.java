@@ -46,7 +46,6 @@ public class AuthServiceRest {
       
   @Inject
   private CustomerClientConnection customerClientConection;
-  
     
   @Inject
   private SecurityUtils secUtils;
@@ -72,9 +71,9 @@ public class AuthServiceRest {
       // Generate simple JWT with login as the Subject 
       String token = "";
       
-      if (secUtils.secureUserCalls()) {
-        token = secUtils.generateJwt(login);
-      }
+     
+      token = secUtils.generateJwt(login, "user");
+      
             
       return Response.ok("logged in")
               .header("Set-Cookie", JWT_COOKIE_NAME + "=" + token + "; Path=/")

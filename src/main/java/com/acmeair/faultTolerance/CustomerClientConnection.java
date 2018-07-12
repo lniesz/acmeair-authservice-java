@@ -16,18 +16,13 @@
 
 package com.acmeair.faultTolerance;
 
-import java.io.UnsupportedEncodingException;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
 import java.time.temporal.ChronoUnit;
-import java.util.Date;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 
-import org.eclipse.microprofile.faulttolerance.Bulkhead;
 import org.eclipse.microprofile.faulttolerance.CircuitBreaker;
 import org.eclipse.microprofile.faulttolerance.Fallback;
 import org.eclipse.microprofile.faulttolerance.Retry;
@@ -45,8 +40,6 @@ public class CustomerClientConnection {
 
   private static Logger logger = Logger.getLogger(CustomerClientConnection.class.getName());
   
-  private static final String VALIDATE_PATH = "/validateid";
-
   @Inject
   @RestClient
   private CustomerClient customerClient;
@@ -54,10 +47,8 @@ public class CustomerClientConnection {
   @Inject
   private SecurityUtils secUtils;
   
-  
 
   //TODO: Do we really need all of these?
-  //@Bulkhead(value = 50, waitingTaskQueue = 300)
   @Retry(maxRetries = 6, delayUnit = ChronoUnit.SECONDS, delay = 10, durationUnit = ChronoUnit.MINUTES, maxDuration = 5)
   @Fallback(BooleanFallbackHandler.class)
   @CircuitBreaker(delay = 10, delayUnit = ChronoUnit.SECONDS, requestVolumeThreshold = 3, failureRatio = 1.0)
@@ -77,26 +68,14 @@ public class CustomerClientConnection {
             + " CustomerClientFTConnectionBean.connect() Service called, execution " + executionCounter);
       }
       executionCounter++;
-      
-      LoginResponse loginResponse;
-      
-      if (secUtils.secureServiceCalls()) {
-        Date date = new Date();
-        
-        String body = "login=" + login + "&password=" + password;
+                  
+      String jwt_token = "Bearer " + secUtils.generateJwt("acmeair-auth-service", "admin");  
+      LoginResponse loginResponse =  customerClient.validateCustomer(jwt_token, login, password);
             
-        String sigBody = secUtils.buildHash(body);
-        String signature = secUtils.buildHmac("POST",VALIDATE_PATH,login,date.toString(),sigBody); 
-
-        loginResponse =  customerClient.validateCustomer(login, password,login, date.toString(), sigBody, signature);
-      } else {
-        loginResponse =  customerClient.validateCustomer(login, password);
-      }
-      
       executionCounter = 0;
       return loginResponse.isValidated();
       
-    } catch (UnsupportedEncodingException | InvalidKeyException | NoSuchAlgorithmException e) {
+    } catch (Exception e) {
       e.printStackTrace();
       executionCounter = 0;
       return false;
